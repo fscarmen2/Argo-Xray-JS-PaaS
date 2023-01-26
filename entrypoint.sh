@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # 设置各变量
-WSPATH=glitch  # WS 路径前缀。(注意:伪装路径不需要 / 符号开始,为避免不必要的麻烦,请不要使用特殊符号.)
+WSPATH=argo  # WS 路径前缀。(注意:伪装路径不需要 / 符号开始,为避免不必要的麻烦,请不要使用特殊符号.)
 UUID=de04add9-5c68-8bab-950c-08cd5320df18
 NEZHA_SERVER=server.nezha.org # 哪吒三个参数，不需要的话可以留空，删除或在这三行最前面加 # 以注释
 NEZHA_PORT=5555
@@ -214,9 +214,9 @@ generate_argo() {
   #!/usr/bin/env bash
 
   # 下载并运行 Argo
-  [ ! -e cloudflared-linux-amd64 ] && wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared-linux-amd64
-  if [[ -e cloudflared-linux-amd64 && ! \$(ps -ef) =~ cloudflared-linux-amd64 ]]; then
-    ./cloudflared-linux-amd64 tunnel --url http://localhost:${PORT} --no-autoupdate > argo.log 2>&1 &
+  [ ! -e cloudflared ] && wget -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared
+  if [[ -e cloudflared && ! \$(ps -ef) =~ cloudflared ]]; then
+    ./cloudflared tunnel --url http://localhost:8080 --no-autoupdate > argo.log 2>&1 &
     sleep 15
     ARGO=\$(cat argo.log | grep -oE "https://.*[a-z]+cloudflare.com" | sed "s#https://##")
     cat > list << EOF
