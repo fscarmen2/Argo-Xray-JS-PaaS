@@ -23,6 +23,7 @@
 * vmess 和 vless 的 uuid，trojan 和 shadowsocks 的 password，各协议的 ws 路径既可以自定义，又或者使用默认值
 * 集成哪吒探针，可以自由选择是否安装
 * 前端 js 定时保活，会玩的用户可以根据具体情况修改间隔时间
+* 节点信息以 V2rayN / Clash / 小火箭 链接方式输出
 
 ## 部署:
 * 镜像 `fscarmen/argo-xary:latest`
