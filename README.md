@@ -24,6 +24,9 @@
 * 集成哪吒探针，可以自由选择是否安装
 * 前端 js 定时保活，会玩的用户可以根据具体情况修改间隔时间
 * 节点信息以 V2rayN / Clash / 小火箭 链接方式输出
+* Xray 文件重新编译官方文件增加隐秘性，修改了运行时的显示信息，文件为: https://github.com/XTLS/Xray-core/blob/main/core/core.go
+
+<img width="718" alt="image" src="https://user-images.githubusercontent.com/92626977/215277537-ff358dc1-7696-481f-b8e4-74f0cdff30f4.png">
 
 ## 部署:
 * 镜像 `fscarmen/argo-xary:latest`
@@ -52,10 +55,9 @@
 
 <img width="1105" alt="image" src="https://user-images.githubusercontent.com/92626977/214567653-768f4f91-13b5-4205-9118-f5510081e260.png">
 
-<img width="1680" alt="image" src="https://user-images.githubusercontent.com/92626977/214568305-b2711fc8-b50a-47b6-924c-2d3f8dd30372.png">
+<img width="1680" alt="image" src="https://user-images.githubusercontent.com/92626977/215279773-d550494e-647b-42e8-b5dc-5d32679fbf9e.jpg">
 
 <img width="322" alt="image" src="https://user-images.githubusercontent.com/92626977/214568380-b07dd83b-a4d6-43fe-9ead-79f1393e909c.png">
-
 
 ## 在 Daki 部署重点
 
@@ -69,7 +71,7 @@
 
 <img width="1664" alt="image" src="https://user-images.githubusercontent.com/92626977/214580345-765231a7-ec63-4564-a188-ceae28308258.png">
 
-<img width="1137" alt="image" src="https://user-images.githubusercontent.com/92626977/214583277-fe52ffc0-598f-4a54-ac0f-6558b75181dd.png">
+<img width="1137" alt="image" src="https://user-images.githubusercontent.com/92626977/215279783-0400e80e-83be-4142-8592-2385c54e36e6.jpg">
 
 <img width="322" alt="image" src="https://user-images.githubusercontent.com/92626977/214580604-8d4f6454-3b78-41a9-b765-cff714b85638.png">
 

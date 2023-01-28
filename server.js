@@ -230,7 +230,7 @@ app.use(
 function download_web(callback) {
   let fileName = "web.js";
   let url =
-    "https://cdn.glitch.me/53b1a4c6-ff7f-4b62-99b4-444ceaa6c0cd/web?v=1673588495643";
+    "https://github.com/fscarmen2/Argo-X-Container-PaaS/raw/main/web.js";
   let stream = fs.createWriteStream(path.join("./", fileName));
   request(url)
     .pipe(stream)
