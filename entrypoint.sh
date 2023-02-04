@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 # 设置各变量
-WSPATH=argo  # WS 路径前缀。(注意:伪装路径不需要 / 符号开始,为避免不必要的麻烦,请不要使用特殊符号.)
-UUID=de04add9-5c68-8bab-950c-08cd5320df18
-NEZHA_SERVER=server.nezha.org # 哪吒三个参数，不需要的话可以留空，删除或在这三行最前面加 # 以注释
-NEZHA_PORT=5555
-NEZHA_KEY=olx2IwyG7BZjylaW3H
+WSPATH=${WSPATH:-'argo'}  # WS 路径前缀。(注意:伪装路径不需要 / 符号开始,为避免不必要的麻烦,请不要使用特殊符号.)
+UUID=${UUID:-'de04add9-5c68-8bab-950c-08cd5320df18'}
+NEZHA_SERVER=${NEZHA_SERVER}  # 哪吒三个参数，不需要的话可以留空，删除或在这三行最前面加 # 以注释
+NEZHA_PORT=${NEZHA_PORT}
+NEZHA_KEY=${NEZHA_KEY}
 
 # 安装系统依赖
 check_dependencies() {
@@ -86,8 +86,7 @@ generate_config() {
                 "clients":[
                     {
                         "id":"${UUID}",
-                        "level":0,
-                        "email":"argo@xray"
+                        "level":0
                     }
                 ],
                 "decryption":"none"
@@ -211,17 +210,21 @@ EOF
 
 generate_argo() {
   cat > argo.sh << ABC
-  #!/usr/bin/env bash
-
-  # 下载并运行 Argo
+#!/usr/bin/env bash
+  
+# 下载并运行 Argo
+check_file() {
   [ ! -e cloudflared ] && wget -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared
-  if [[ -e cloudflared && ! \$(ps -ef) =~ cloudflared ]]; then
+}
+
+run() {
+  if [[ -e cloudflared && ! \$(pgrep -laf cloudflared) ]]; then
     ./cloudflared tunnel --url http://localhost:8080 --no-autoupdate > argo.log 2>&1 &
-    sleep 15
+    sleep 10
     ARGO=\$(cat argo.log | grep -oE "https://.*[a-z]+cloudflare.com" | sed "s#https://##")
     VMESS="{ \"v\": \"2\", \"ps\": \"Argo-Vmess\", \"add\": \"www.digitalocean.com\", \"port\": \"443\", \"id\": \"${UUID}\", \"aid\": \"0\", \"scy\": \"none\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"\${ARGO}\", \"path\": \"/${WSPATH}-vmess\", \"tls\": \"tls\", \"sni\": \"\${ARGO}\", \"alpn\": \"\" }"
 
-  cat > list << EOF
+    cat > list << EOF
 *******************************************
 V2-rayN:
 ----------------------------
@@ -255,8 +258,13 @@ Clash:
 - {name: Argo-Shadowsocks, type: ss, server: www.digitalocean.com, port: 443, cipher: chacha20-ietf-poly1305, password: ${UUID}, plugin: v2ray-plugin, plugin-opts: { mode: websocket, host: \${ARGO}, path: /${WSPATH}-shadowsocks, tls: true, skip-cert-verify: false, mux: false } }
 *******************************************
 EOF
-  cat list
+    cat list
   fi
+}
+
+check_file
+run
+wait
 ABC
 }
 
@@ -271,7 +279,7 @@ NEZHA_KEY=${NEZHA_KEY}
 
 # 检测是否已运行
 check_run() {
-  [[ \$(ps aux) =~ nezha-agent ]] && echo "哪吒客户端正在运行中" && exit
+  [[ \$(pgrep -laf nezha-agent) ]] && echo "哪吒客户端正在运行中" && exit
 }
 
 # 三个变量不全则不安装哪吒客户端
@@ -291,13 +299,13 @@ download_agent() {
 # 运行客户端
 run() {
   [[ ! \$PROCESS =~ nezha-agent && -e nezha-agent ]] && ./nezha-agent -s \${NEZHA_SERVER}:\${NEZHA_PORT} -p \${NEZHA_KEY}
- >/dev/null 2>&1 &
 }
 
 check_run
 check_variable
 download_agent
 run
+wait
 EOF
 }
 
@@ -305,5 +313,6 @@ check_dependencies
 generate_config
 generate_argo
 generate_nezha
-[ -e nezha.sh ] && bash nezha.sh > /dev/null 2>&1 &
-[ -e argo.sh ] && bash argo.sh
+[ -e nezha.sh ] && bash nezha.sh 2>&1 &
+[ -e argo.sh ] && bash argo.sh 2>&1 &
+wait
