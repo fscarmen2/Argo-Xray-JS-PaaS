@@ -1,10 +1,10 @@
 {
   "name": "express-hello-world",
   "version": "1.0.0",
-  "description": "Express Hello World on Render",
+  "description": "Express Hello World",
   "main": "server.js",
-  "repository": "",
-  "author": "Render Developers",
+  "repository": "https://github.com/fscarmen2/Argo-X-JS-PaaS",
+  "author": "fscarmen",
   "license": "MIT",
   "private": false,
   "scripts": {
@@ -13,7 +13,8 @@
   "dependencies": {
     "express": "^4.18.2",
     "http-proxy-middleware": "^2.0.6",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "basic-auth": "^2.0.1"
   },
   "engines": {
     "node": ">=14"

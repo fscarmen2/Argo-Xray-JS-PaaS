@@ -1,5 +1,7 @@
-const url = "eggplant-glitter-spinach.glitch.me";
-const port = 3000;
+const username = process.env.WEB_USERNAME || "admin";
+const password = process.env.WEB_PASSWORD || "password";
+const url = "http://127.0.0.1";
+const port = process.env.PORT || 3000;
 const express = require("express");
 const app = express();
 var exec = require("child_process").exec;
@@ -8,9 +10,20 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 var request = require("request");
 var fs = require("fs");
 var path = require("path");
+const auth = require("basic-auth");
 
 app.get("/", function (req, res) {
   res.send("hello world");
+});
+
+// 页面访问密码
+app.use((req, res, next) => {
+  const user = auth(req);
+  if (user && user.name === username && user.pass === password) {
+    return next();
+  }
+  res.set("WWW-Authenticate", 'Basic realm="Node"');
+  return res.status(401).send();
 });
 
 //获取系统进程表
@@ -130,12 +143,11 @@ app.get("/test", function (req, res) {
 //web保活
 function keep_web_alive() {
   // 1.请求主页，保持唤醒
-  request("https://" + url , function (error, response, body) {
-    if (!error) {
-      console.log("保活-请求主页-命令行执行成功，响应报文:" + body);
-    }
-    else {
-      console.log("保活-请求主页-命令行执行错误: " + error);
+  exec("curl -m8 " + url + ":" + port, function (err, stdout, stderr) {
+    if (err) {
+      console.log("保活-请求主页-命令行执行错误：" + err);
+    } else {
+      console.log("保活-请求主页-命令行执行成功，响应报文:" + stdout);
     }
   });
 

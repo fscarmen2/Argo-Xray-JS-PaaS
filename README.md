@@ -17,6 +17,7 @@
 
 ## 项目特点:
 * 本项目用于在 Express.js PaaS 平台上部署 Xray，采用的方案为 Argo + Xray + WebSocket + TLS
+* 解锁 ChatGPT
 * 在浏览器查看系统各项信息，方便直观
 * 使用 CloudFlare 的 Argo 隧道，直接优选 + 隧道，CDN 不用再做 workers
 * 回流分流，同时支持 Xray 4 种主流协议: vless /  vmess / trojan / shadowsocks
@@ -29,9 +30,18 @@
 <img width="718" alt="image" src="https://user-images.githubusercontent.com/92626977/215277537-ff358dc1-7696-481f-b8e4-74f0cdff30f4.png">
 
 ## 部署:
-* 镜像 `fscarmen/argo-xary:latest`
 
-* PaaS 平台用到的变量
+### PaaS 平台用到的变量:
+ 
+* 在 `server.js` 文件的第1、2行修改查询网页的用户名和密码
+  | 变量名        | 是否必须 | 默认值 | 备注 |
+  | ------------ | ------ | ------ | ------ |
+  | WEB_USERNAME | 是 | admin | 网页的用户名 |
+  | WEB_PASSWORD | 是 | password | 网页的密码 |
+
+<img width="939" alt="image" src="https://user-images.githubusercontent.com/92626977/221387298-4183a1d6-ae14-45f9-b498-1789a4f7117e.png">
+
+* 在 `entrypoint.sh` 文件的前面 4-12 行修改；访问页面的认证在 `server.js` 文件的第1、2行修改必填
   | 变量名        | 是否必须 | 默认值 | 备注 |
   | ------------ | ------ | ------ | ------ |
   | UUID         | 否 | de04add9-5c68-8bab-950c-08cd5320df18 | 可在线生成 https://www.zxgj.cn/g/uuid |
@@ -39,6 +49,8 @@
   | NEZHA_SERVER | 否 |        | 哪吒探针服务端的 IP 或域名 |
   | NEZHA_PORT   | 否 |        | 哪吒探针服务端的端口 |
   | NEZHA_KEY    | 否 |        | 哪吒探针客户端专用 Key |
+  | ARGO_AUTH    | 否 |        | Argo 的 Token 或者 json 值 |
+  | ARGO_DOMAIN  | 否 |        | Argo 的域名，须与 ARGO_DOMAIN 必需一起填了才能生效 |
 
 <img width="1301" alt="image" src="https://user-images.githubusercontent.com/92626977/214585099-2f8a9efe-2afb-42af-99ea-01540fcefdcf.png">
 
