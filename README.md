@@ -49,10 +49,10 @@
   | NEZHA_SERVER | 否 |        | 哪吒探针服务端的 IP 或域名 |
   | NEZHA_PORT   | 否 |        | 哪吒探针服务端的端口 |
   | NEZHA_KEY    | 否 |        | 哪吒探针客户端专用 Key |
-  | ARGO_AUTH    | 否 |        | Argo 的 Token 或者 json 值 |
+  | ARGO_AUTH    | 否 |        | Argo 的 Token 或者 json 值，其中 json 可以通过以下网站，在不需绑卡的情况下轻松获取: https://fscarmen.cloudflare.now.cc/ |
   | ARGO_DOMAIN  | 否 |        | Argo 的域名，须与 ARGO_DOMAIN 必需一起填了才能生效 |
 
-<img width="1301" alt="image" src="https://user-images.githubusercontent.com/92626977/214585099-2f8a9efe-2afb-42af-99ea-01540fcefdcf.png">
+<img width="1301" alt="image" src="https://user-images.githubusercontent.com/92626977/226095672-ecbfc8e7-80f3-4821-abb4-df75c4ece483.png">
 
 * 需要应用的 js
   | 命令 | 说明 |

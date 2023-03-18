@@ -3,18 +3,26 @@
 # 设置各变量
 WSPATH=${WSPATH:-'argo'}  # WS 路径前缀。(注意:伪装路径不需要 / 符号开始,为避免不必要的麻烦,请不要使用特殊符号.)
 UUID=${UUID:-'de04add9-5c68-8bab-950c-08cd5320df18'}
-NEZHA_SERVER=${NEZHA_SERVER}  # 哪吒三个参数，不需要的话可以留空，删除或在这三行最前面加 # 以注释
+
+# 哪吒三个参数，不需要的话可以留空，删除或在这三行最前面加 # 以注释
+NEZHA_SERVER=${NEZHA_SERVER}
 NEZHA_PORT=${NEZHA_PORT}
 NEZHA_KEY=${NEZHA_KEY}
 
+# Argo 固定域名隧道的两个参数,这个可以填 Json 内容或 Token 内容，其中 json 可以通过以下网站，在不需绑卡的情况下轻松获取: https://fscarmen.cloudflare.now.cc/
+# 不需要的话可以留空，删除或在这两行最前面加 # 以注释
+ARGO_AUTH=${ARGO_AUTH} 
+ARGO_DOMAIN=${ARGO_DOMAIN}
+
 # 安装系统依赖
 check_dependencies() {
-  DEPS_CHECK=("wget" "unzip")
-  DEPS_INSTALL=(" wget" " unzip")
+  DEPS_CHECK=("wget" "unzip" "ss")
+  DEPS_INSTALL=(" wget" " unzip" "iproute2")
   for ((i=0;i<${#DEPS_CHECK[@]};i++)); do [[ ! $(type -p ${DEPS_CHECK[i]}) ]] && DEPS+=${DEPS_INSTALL[i]}; done
   [ -n "$DEPS" ] && { apt-get update >/dev/null 2>&1; apt-get install -y $DEPS >/dev/null 2>&1; }
 }
 
+# 生成 web.js 配置文件
 generate_config() {
   cat > config.json << EOF
 {
@@ -248,53 +256,59 @@ check_file() {
 }
 
 run() {
-  if [[ -e cloudflared && ! \$(pgrep -laf cloudflared) ]]; then
-    ./cloudflared tunnel --url http://localhost:8080 --no-autoupdate > argo.log 2>&1 &
-    sleep 10
-    ARGO=\$(cat argo.log | grep -oE "https://.*[a-z]+cloudflare.com" | sed "s#https://##")
-    VMESS="{ \"v\": \"2\", \"ps\": \"Argo-Vmess\", \"add\": \"icook.hk\", \"port\": \"443\", \"id\": \"${UUID}\", \"aid\": \"0\", \"scy\": \"none\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"\${ARGO}\", \"path\": \"/${WSPATH}-vmess?ed=2048\", \"tls\": \"tls\", \"sni\": \"\${ARGO}\", \"alpn\": \"\" }"
+  if [[ -n "\${ARGO_AUTH}" && -n "\${ARGO_DOMAIN}" ]]; then
+    [[ "\$ARGO_AUTH" =~ TunnelSecret ]] && echo "\$ARGO_AUTH" | sed 's@{@{"@g;s@[,:]@"\0"@g;s@}@"}@g' > tunnel.json && echo -e "tunnel: \$(sed "s@.*TunnelID:\(.*\)}@\1@g" <<< "\$ARGO_AUTH")\ncredentials-file: $PWD/tunnel.json" > tunnel.yml && ./cloudflared tunnel --config tunnel.yml run 2>&1 &
+    [[ \$ARGO_AUTH =~ ^[A-Z0-9a-z]{120,250}$ ]] && ./cloudflared tunnel run --token ${ARGO_AUTH} 2>&1 &
+  else
+    ./cloudflared tunnel --no-autoupdate --url http://localhost:8080 2>&1 &
+    sleep 5
+    local LOCALHOST=\$(ss -nltp | grep '"cloudflared"' | awk '{print \$4}')
+    ARGO_DOMAIN=\$(wget -qO- http://\$LOCALHOST/quicktunnel | cut -d\" -f4)
+  fi
+}
 
-    cat > list << EOF
+export_list() {
+  VMESS="{ \"v\": \"2\", \"ps\": \"Argo-Vmess\", \"add\": \"icook.hk\", \"port\": \"443\", \"id\": \"${UUID}\", \"aid\": \"0\", \"scy\": \"none\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"\${ARGO_DOMAIN}\", \"path\": \"/${WSPATH}-vmess?ed=2048\", \"tls\": \"tls\", \"sni\": \"\${ARGO_DOMAIN}\", \"alpn\": \"\" }"
+  cat > list << EOF
 *******************************************
 V2-rayN:
 ----------------------------
-vless://${UUID}@icook.hk:443?encryption=none&security=tls&sni=\${ARGO}&type=ws&host=\${ARGO}&path=%2F${WSPATH}-vless?ed=2048#Argo-Vless
+vless://${UUID}@icook.hk:443?encryption=none&security=tls&sni=\${ARGO_DOMAIN}&type=ws&host=\${ARGO_DOMAIN}&path=%2F${WSPATH}-vless?ed=2048#Argo-Vless
 ----------------------------
 vmess://\$(echo \$VMESS | base64 -w0)
 ----------------------------
-trojan://${UUID}@icook.hk:443?security=tls&sni=\${ARGO}&type=ws&host=\${ARGO}&path=%2F${WSPATH}-trojan?ed=2048#Argo-Trojan
+trojan://${UUID}@icook.hk:443?security=tls&sni=\${ARGO_DOMAIN}&type=ws&host=\${ARGO_DOMAIN}&path=%2F${WSPATH}-trojan?ed=2048#Argo-Trojan
 ----------------------------
 ss://$(echo "chacha20-ietf-poly1305:${UUID}@icook.hk:443" | base64 -w0)@icook.hk:443#Argo-Shadowsocks
-由于该软件导出的链接不全，请自行处理如下: 传输协议: WS ， 伪装域名: \${ARGO} ，路径: /${WSPATH}-shadowsocks?ed=2048 ， 传输层安全: tls ， sni: \${ARGO}
+由于该软件导出的链接不全，请自行处理如下: 传输协议: WS ， 伪装域名: \${ARGO_DOMAIN} ，路径: /${WSPATH}-shadowsocks?ed=2048 ， 传输层安全: tls ， sni: \${ARGO_DOMAIN}
 *******************************************
 小火箭:
 ----------------------------
-vless://${UUID}@icook.hk:443?encryption=none&security=tls&type=ws&host=\${ARGO}&path=/${WSPATH}-vless?ed=2048&sni=\${ARGO}#Argo-Vless
+vless://${UUID}@icook.hk:443?encryption=none&security=tls&type=ws&host=\${ARGO_DOMAIN}&path=/${WSPATH}-vless?ed=2048&sni=\${ARGO_DOMAIN}#Argo-Vless
 ----------------------------
-vmess://$(echo "none:${UUID}@icook.hk:443" | base64 -w0)?remarks=Argo-Vmess&obfsParam=\${ARGO}&path=/${WSPATH}-vmess?ed=2048&obfs=websocket&tls=1&peer=\${ARGO}&alterId=0
+vmess://$(echo "none:${UUID}@icook.hk:443" | base64 -w0)?remarks=Argo-Vmess&obfsParam=\${ARGO_DOMAIN}&path=/${WSPATH}-vmess?ed=2048&obfs=websocket&tls=1&peer=\${ARGO_DOMAIN}&alterId=0
 ----------------------------
-trojan://${UUID}@icook.hk:443?peer=\${ARGO}&plugin=obfs-local;obfs=websocket;obfs-host=\${ARGO};obfs-uri=/${WSPATH}-trojan?ed=2048#Argo-Trojan
+trojan://${UUID}@icook.hk:443?peer=\${ARGO_DOMAIN}&plugin=obfs-local;obfs=websocket;obfs-host=\${ARGO_DOMAIN};obfs-uri=/${WSPATH}-trojan?ed=2048#Argo-Trojan
 ----------------------------
-ss://$(echo "chacha20-ietf-poly1305:${UUID}@icook.hk:443" | base64 -w0)?obfs=wss&obfsParam=\${ARGO}&path=/${WSPATH}-shadowsocks?ed=2048#Argo-Shadowsocks
+ss://$(echo "chacha20-ietf-poly1305:${UUID}@icook.hk:443" | base64 -w0)?obfs=wss&obfsParam=\${ARGO_DOMAIN}&path=/${WSPATH}-shadowsocks?ed=2048#Argo-Shadowsocks
 *******************************************
 Clash:
 ----------------------------
-- {name: Argo-Vless, type: vless, server: icook.hk, port: 443, uuid: ${UUID}, tls: true, servername: \${ARGO}, skip-cert-verify: false, network: ws, ws-opts: {path: /${WSPATH}-vless?ed=2048, headers: { Host: \${ARGO}}}, udp: true}
+- {name: Argo-Vless, type: vless, server: icook.hk, port: 443, uuid: ${UUID}, tls: true, servername: \${ARGO_DOMAIN}, skip-cert-verify: false, network: ws, ws-opts: {path: /${WSPATH}-vless?ed=2048, headers: { Host: \${ARGO_DOMAIN}}}, udp: true}
 ----------------------------
-- {name: Argo-Vmess, type: vmess, server: icook.hk, port: 443, uuid: ${UUID}, alterId: 0, cipher: none, tls: true, skip-cert-verify: true, network: ws, ws-opts: {path: /${WSPATH}-vmess?ed=2048, headers: {Host: \${ARGO}}}, udp: true}
+- {name: Argo-Vmess, type: vmess, server: icook.hk, port: 443, uuid: ${UUID}, alterId: 0, cipher: none, tls: true, skip-cert-verify: true, network: ws, ws-opts: {path: /${WSPATH}-vmess?ed=2048, headers: {Host: \${ARGO_DOMAIN}}}, udp: true}
 ----------------------------
-- {name: Argo-Trojan, type: trojan, server: icook.hk, port: 443, password: ${UUID}, udp: true, tls: true, sni: \${ARGO}, skip-cert-verify: false, network: ws, ws-opts: { path: /${WSPATH}-trojan?ed=2048, headers: { Host: \${ARGO} } } }
+- {name: Argo-Trojan, type: trojan, server: icook.hk, port: 443, password: ${UUID}, udp: true, tls: true, sni: \${ARGO_DOMAIN}, skip-cert-verify: false, network: ws, ws-opts: { path: /${WSPATH}-trojan?ed=2048, headers: { Host: \${ARGO_DOMAIN} } } }
 ----------------------------
-- {name: Argo-Shadowsocks, type: ss, server: icook.hk, port: 443, cipher: chacha20-ietf-poly1305, password: ${UUID}, plugin: v2ray-plugin, plugin-opts: { mode: websocket, host: \${ARGO}, path: /${WSPATH}-shadowsocks?ed=2048, tls: true, skip-cert-verify: false, mux: false } }
+- {name: Argo-Shadowsocks, type: ss, server: icook.hk, port: 443, cipher: chacha20-ietf-poly1305, password: ${UUID}, plugin: v2ray-plugin, plugin-opts: { mode: websocket, host: \${ARGO_DOMAIN}, path: /${WSPATH}-shadowsocks?ed=2048, tls: true, skip-cert-verify: false, mux: false } }
 *******************************************
 EOF
-    cat list
-  fi
+  cat list
 }
 
 check_file
 run
-wait
+export_list
 ABC
 }
 
@@ -328,14 +342,13 @@ download_agent() {
 
 # 运行客户端
 run() {
-  [[ ! \$PROCESS =~ nezha-agent && -e nezha-agent ]] && ./nezha-agent -s \${NEZHA_SERVER}:\${NEZHA_PORT} -p \${NEZHA_KEY}
+  [[ ! \$PROCESS =~ nezha-agent && -e nezha-agent ]] && ./nezha-agent -s \${NEZHA_SERVER}:\${NEZHA_PORT} -p \${NEZHA_KEY} 2>&1 &
 }
 
 check_run
 check_variable
 download_agent
 run
-wait
 EOF
 }
 
@@ -343,6 +356,5 @@ check_dependencies
 generate_config
 generate_argo
 generate_nezha
-[ -e nezha.sh ] && bash nezha.sh 2>&1 &
-[ -e argo.sh ] && bash argo.sh 2>&1 &
-wait
+[ -e nezha.sh ] && bash nezha.sh
+[ -e argo.sh ] && bash argo.sh
