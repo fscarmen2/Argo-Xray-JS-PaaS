@@ -1,6 +1,6 @@
 # Xray + Argo for Express.js PaaS
 
-为 JS 平台而生
+在没有公网的平台挖啊挖啊挖，Argo打通各式服务连接千万家。---为 JS 平台而生
 
 * * *
 
@@ -26,6 +26,7 @@
 * 前端 js 定时保活，会玩的用户可以根据具体情况修改间隔时间
 * 节点信息以 V2rayN / Clash / 小火箭 链接方式输出
 * Xray 文件重新编译官方文件增加隐秘性，修改了运行时的显示信息，文件为: https://github.com/XTLS/Xray-core/blob/main/core/core.go
+* 可以使用浏览器访问，使用 ttyd，ssh over http2
 
 <img width="718" alt="image" src="https://user-images.githubusercontent.com/92626977/215277537-ff358dc1-7696-481f-b8e4-74f0cdff30f4.png">
 
@@ -58,9 +59,10 @@
 * 需要应用的 js
   | 命令 | 说明 |
   | ---- |------ |
-  | <URL>/list | 查看节点数据 |
+  | <URL>/list   | 查看节点数据 |
   | <URL>/status | 查看后台进程 |
   | <URL>/listen | 查看后台监听端口 |
+  | <URL>/test	 | 测试是否为只读系统 |
 
 ## 在 Glitch 部署重点
 

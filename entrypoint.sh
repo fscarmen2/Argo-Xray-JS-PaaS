@@ -3,6 +3,8 @@
 # 设置各变量，WS 路径前缀。(注意:伪装路径不需要 / 符号开始,为避免不必要的麻烦,请不要使用特殊符号.)
 WSPATH=${WSPATH:-'argo'}
 UUID=${UUID:-'de04add9-5c68-8bab-950c-08cd5320df18'}
+WEB_USERNAME=${WEB_USERNAME:-'admin'}
+WEB_PASSWORD=${WEB_PASSWORD:-'password'}
 
 # 哪吒4个参数，ssl/tls 看是否需要，不需要的话可以留空，删除或在这4行最前面加 # 以注释
 NEZHA_SERVER="$NEZHA_SERVER"
@@ -251,6 +253,7 @@ generate_argo() {
 
 ARGO_AUTH=${ARGO_AUTH}
 ARGO_DOMAIN=${ARGO_DOMAIN}
+SSH_DOMAIN=${SSH_DOMAIN}
 
 # 下载并运行 Argo
 check_file() {
@@ -259,12 +262,35 @@ check_file() {
 
 run() {
   if [[ -n "\${ARGO_AUTH}" && -n "\${ARGO_DOMAIN}" ]]; then
-    [[ "\$ARGO_AUTH" =~ TunnelSecret ]] && echo "\$ARGO_AUTH" | sed 's@{@{"@g;s@[,:]@"\0"@g;s@}@"}@g' > tunnel.json && echo -e "tunnel: \$(sed "s@.*TunnelID:\(.*\)}@\1@g" <<< "\$ARGO_AUTH")\ncredentials-file: /app/tunnel.json" > tunnel.yml && ./cloudflared tunnel --edge-ip-version auto --config tunnel.yml --url http://localhost:8080 run 2>&1 &
-    [[ \$ARGO_AUTH =~ ^[A-Z0-9a-z=]{120,250}$ ]] && ./cloudflared tunnel --edge-ip-version auto run --token ${ARGO_AUTH} 2>&1 &
+    if [[ "\$ARGO_AUTH" =~ TunnelSecret ]]; then
+      echo "\$ARGO_AUTH" | sed 's@{@{"@g;s@[,:]@"\0"@g;s@}@"}@g' > tunnel.json
+      cat > tunnel.yml << EOF
+tunnel: \$(sed "s@.*TunnelID:\(.*\)}@\1@g" <<< "\$ARGO_AUTH")
+credentials-file: /app/tunnel.json
+protocol: h2mux
+
+ingress:
+  - hostname: \$ARGO_DOMAIN
+    service: http://localhost:8080
+EOF
+      [ -n "\${SSH_DOMAIN}" ] && cat >> tunnel.yml << EOF
+  - hostname: \$SSH_DOMAIN
+    service: http://localhost:2222
+EOF
+      cat >> tunnel.yml << EOF
+    originRequest:
+      noTLSVerify: true
+  - service: http_status:404
+EOF
+      nohup ./cloudflared tunnel --edge-ip-version auto --config tunnel.yml run 2>/dev/null 2>&1 &
+    elif [[ \$ARGO_AUTH =~ ^[A-Z0-9a-z=]{120,250}$ ]]; then
+      nohup ./cloudflared tunnel --edge-ip-version auto --protocol h2mux run --token ${ARGO_AUTH} 2>/dev/nul 2>&1 &
+    fi
   else
-    ./cloudflared tunnel --edge-ip-version auto --no-autoupdate --logfile argo.log --loglevel info --url http://localhost:8080 2>&1 &
+    nohup ./cloudflared tunnel --edge-ip-version auto --protocol h2mux --no-autoupdate --url http://localhost:8080 2>/dev/nul 2>&1 &
     sleep 5
-    ARGO_DOMAIN=\$(cat argo.log | grep -o "info.*https://.*trycloudflare.com" | sed "s@.*https://@@g" | tail -n 1)
+    local LOCALHOST=\$(ss -nltp | grep '"cloudflared"' | awk '{print \$4}')
+    ARGO_DOMAIN=\$(wget -qO- http://\$LOCALHOST/quicktunnel | cut -d\" -f4)
   fi
 }
 
@@ -354,8 +380,50 @@ run
 EOF
 }
 
+generate_ttyd() {
+  cat > ttyd.sh << EOF
+#!/usr/bin/env bash
+
+# ttyd 两个参数
+WEB_USERNAME=${WEB_USERNAME}
+WEB_PASSWORD=${WEB_PASSWORD}
+
+# 检测是否已运行
+check_run() {
+  [[ \$(pgrep -lafx ttyd) ]] && echo "ttyd 正在运行中" && exit
+}
+
+# ssh argo 域名不设置，则不安装 ttyd 服务端
+check_variable() {
+  [ -z "\${SSH_DOMAIN}" ] && exit
+}
+
+# 下载最新版本 ttyd
+download_ttyd() {
+  if [ ! -e ttyd ]; then
+    URL=\$(wget -qO- "https://api.github.com/repos/tsl0922/ttyd/releases/latest" | grep -o "https.*x86_64")
+    URL=\${URL:-https://github.com/tsl0922/ttyd/releases/download/1.7.3/ttyd.x86_64}
+    wget -O ttyd \${URL}
+    chmod +x ttyd
+  fi
+}
+
+# 运行 ttyd 服务端
+run() {
+  [ -e nezha-agent ] && nohup ./ttyd -c \${WEB_USERNAME}:\${WEB_PASSWORD} -p 2222 bash >/dev/null 2>&1 &
+}
+
+check_run
+check_variable
+download_ttyd
+run
+EOF
+}
+
 generate_config
 generate_argo
 generate_nezha
+generate_ttyd
 [ -e nezha.sh ] && bash nezha.sh
 [ -e argo.sh ] && bash argo.sh
+[ -e ttyd.sh ] && bash ttyd.sh
