@@ -259,7 +259,7 @@ app.use( /* 具体配置项迁移参见 https://github.com/chimurai/http-proxy-m
     pathRewrite: {
       '^/': '/', /* 去除请求中的斜线号  */
     },
-    logger: console /* 是否打开log日志  */
+    // logger: console /* 是否打开log日志  */
   })
 );
 
