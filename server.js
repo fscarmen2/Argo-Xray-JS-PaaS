@@ -1,12 +1,12 @@
 const username = process.env.WEB_USERNAME || "admin";
 const password = process.env.WEB_PASSWORD || "password";
 const url = "http://127.0.0.1";
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000; /* 当容器平台分配不规则端口时,此处需修改为分配端口 */
 const express = require("express");
 const app = express();
 var exec = require("child_process").exec;
 const os = require("os");
-const { createProxyMiddleware } = require("http-proxy-middleware");
+const { legacyCreateProxyMiddleware } = require("http-proxy-middleware");
 var request = require("request");
 var fs = require("fs");
 var path = require("path");
@@ -235,17 +235,31 @@ app.get("/download", function (req, res) {
   });
 });
 
-app.use(
-  "/",
-  createProxyMiddleware({
-    changeOrigin: true, // 默认false，是否需要改变原始主机头为目标URL
-    onProxyReq: function onProxyReq(proxyReq, req, res) {},
-    pathRewrite: {
-      // 请求中去除/
-      "^/": "/"
+
+app.use( /* 具体配置项迁移参见 https://github.com/chimurai/http-proxy-middleware/blob/master/MIGRATION.md */
+  legacyCreateProxyMiddleware({
+    target: 'http://127.0.0.1:8080/', /* 需要跨域处理的请求地址 */
+    ws: true, /* 是否代理websocket */
+    changeOrigin: true, /* 是否需要改变原始主机头为目标URL,默认false */ 
+    on: {  /* http代理事件集 */ 
+      proxyRes: function proxyRes(proxyRes, req, res) { /* 处理代理请求 */
+        // console.log('RAW Response from the target', JSON.stringify(proxyRes.headers, true, 2)); //for debug
+        // console.log(req) //for debug
+        // console.log(res) //for debug
+      },
+      proxyReq: function proxyReq(proxyReq, req, res) { /* 处理代理响应 */
+        // console.log(proxyReq); //for debug
+        // console.log(req) //for debug
+        // console.log(res) //for debug
+      },
+      error: function error(err, req, res) { /* 处理异常  */
+        console.warn('websocket error.', err);
+      }
     },
-    target: "http://127.0.0.1:8080/", // 需要跨域处理的请求地址
-    ws: true // 是否代理websockets
+    pathRewrite: {
+      '^/': '/', /* 去除请求中的斜线号  */
+    },
+    // logger: console /* 是否打开log日志  */
   })
 );
 
