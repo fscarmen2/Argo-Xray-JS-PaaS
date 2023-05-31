@@ -66,47 +66,6 @@ app.get("/list", function (req, res) {
     });
   });
 
-//启动web
-app.get("/start", function (req, res) {
-  let cmdStr = "[ -e entrypoint.sh ] && bash entrypoint.sh; chmod +x ./web.js && ./web.js -c ./config.json >/dev/null 2>&1 &";
-  exec(cmdStr, function (err, stdout, stderr) {
-    if (err) {
-      res.send("Web 执行错误：" + err);
-    }
-    else {
-      res.send("Web 执行结果：" + "启动成功!");
-    }
-  });
-});
-
-//启动argo
-app.get("/argo", function (req, res) {
-  let cmdStr =
-    "bash argo.sh >/dev/null 2>&1 &";
-  exec(cmdStr, function (err, stdout, stderr) {
-    if (err) {
-      res.send("Argo 部署错误：" + err);
-    }
-    else {
-      res.send("Argo 执行结果：" + "启动成功!");
-    }
-  });
-});
-
-//启动哪吒
-app.get("/nezha", function (req, res) {
-  let cmdStr =
-    "bash nezha.sh >/dev/null 2>&1 &";
-  exec(cmdStr, function (err, stdout, stderr) {
-    if (err) {
-      res.send("哪吒部署错误：" + err);
-    }
-    else {
-      res.send("哪吒执行结果：" + "启动成功!");
-    }
-  });
-});
-
 //获取系统版本、内存信息
 app.get("/info", function (req, res) {
   let cmdStr = "cat /etc/*release | grep -E ^NAME";
@@ -178,7 +137,7 @@ setInterval(keep_web_alive, 10 * 1000);
 function keep_argo_alive() {
   exec("pgrep -laf cloudflared", function (err, stdout, stderr) {
     // 1.查后台系统进程，保持唤醒
-    if (stdout.includes("./cloudflared tunnel --url http://localhost:8080 --no-autoupdate")) {
+    if (stdout.includes("./cloudflared")) {
       console.log("Argo 正在运行");
     }
     else {

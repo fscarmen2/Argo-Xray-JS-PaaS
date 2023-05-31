@@ -10,6 +10,7 @@
 - [部署](README.md#部署)
 - [在 Glitch 部署重点](README.md#在-glitch-部署重点)
 - [在 Daki 部署重点](README.md#在-daki-部署重点)
+- [ttyd webssh / filebrowser webftp 的部署](README.md#ttyd-webssh--filebrowser-webftp-的部署)
 - [鸣谢下列作者的文章和项目](README.md#鸣谢下列作者的文章和项目)
 - [免责声明](README.md#免责声明)
 
@@ -26,7 +27,7 @@
 * 前端 js 定时保活，会玩的用户可以根据具体情况修改间隔时间
 * 节点信息以 V2rayN / Clash / 小火箭 链接方式输出
 * Xray 文件重新编译官方文件增加隐秘性，修改了运行时的显示信息，文件为: https://github.com/XTLS/Xray-core/blob/main/core/core.go
-* 可以使用浏览器访问，使用 ttyd，ssh over http2
+* 可以使用浏览器使用 webssh 和 webftp，更方便管理系统
 
 <img width="718" alt="image" src="https://user-images.githubusercontent.com/92626977/215277537-ff358dc1-7696-481f-b8e4-74f0cdff30f4.png">
 
@@ -53,6 +54,9 @@
   | NEZHA_TLS    | 否 |        | 哪吒探针是否启用 SSL/TLS 加密 ，如不启用请删除，如要启用填"1" |
   | ARGO_AUTH    | 否 |        | Argo 的 Token 或者 json 值，其中 json 可以通过以下网站，在不需绑卡的情况下轻松获取: https://fscarmen.cloudflare.now.cc/ |
   | ARGO_DOMAIN  | 否 |        | Argo 的域名，须与 ARGO_DOMAIN 必需一起填了才能生效 |
+  | SSH_DOMAIN   | 否 |        | webssh 的域名，用户名和密码就是 <WEB_USERNAME> 和 <WEB_PASSWORD> |
+  | FTP_DOMAIN   | 否 |        | webftp 的域名，用户名和密码就是 <WEB_USERNAME> 和 <WEB_PASSWORD> |  
+
 
 <img width="1301" alt="image" src="https://user-images.githubusercontent.com/92626977/226095672-ecbfc8e7-80f3-4821-abb4-df75c4ece483.png">
 
@@ -90,6 +94,29 @@
 
 <img width="322" alt="image" src="https://user-images.githubusercontent.com/92626977/214580604-8d4f6454-3b78-41a9-b765-cff714b85638.png">
 
+## ttyd webssh / filebrowser webftp 的部署
+
+* 原理
+```
++---------+     argo     +---------+     http     +--------+    ssh    +-----------+
+| browser | <==========> | CF edge | <==========> |  ttyd  | <=======> | ssh server|
++---------+     argo     +---------+   websocket  +--------+    ssh    +-----------+
+
++---------+     argo     +---------+     http     +--------------+    ftp    +-----------+
+| browser | <==========> | CF edge | <==========> | filebrowser  | <=======> | ftp server|
++---------+     argo     +---------+   websocket  +--------------+    ftp    +-----------+
+
+```
+
+* 使用 Json 方式建的隧道
+  
+<img width="1643" alt="image" src="https://user-images.githubusercontent.com/92626977/235453084-a8c55417-18b4-4a47-9eef-ee3053564bff.png">
+
+<img width="1303" alt="image" src="https://github.com/fscarmen2/aa/assets/92626977/652ef3ff-c9a9-4771-92c8-bab6c516abeb">
+
+<img width="1001" alt="image" src="https://github.com/fscarmen2/aa/assets/92626977/5b5e0143-ba5a-4b6a-a7fd-e77ef9d0703e">
+
+<img width="1527" alt="image" src="https://github.com/fscarmen2/rrr/assets/92626977/91cece0d-cc61-4681-8eae-03f961a16976">
 
 ## 鸣谢下列作者的文章和项目:
 * 前端 JS 在大佬 Nike Jeff 的项目 基础上，为了通用性和扩展功能作修改，https://github.com/hrzyang/glitch-trojan
