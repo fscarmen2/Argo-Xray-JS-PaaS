@@ -279,7 +279,7 @@ run() {
       cat > tunnel.yml << EOF
 tunnel: \$(sed "s@.*TunnelID:\(.*\)}@\1@g" <<< "\$ARGO_AUTH")
 credentials-file: /app/tunnel.json
-protocol: h2mux
+protocol: http2
 
 ingress:
   - hostname: \$ARGO_DOMAIN
@@ -298,10 +298,10 @@ EOF
 EOF
       nohup ./cloudflared tunnel --edge-ip-version auto --config tunnel.yml run 2>/dev/null 2>&1 &
     elif [[ \$ARGO_AUTH =~ ^[A-Z0-9a-z=]{120,250}$ ]]; then
-      nohup ./cloudflared tunnel --edge-ip-version auto --protocol h2mux run --token ${ARGO_AUTH} 2>/dev/null 2>&1 &
+      nohup ./cloudflared tunnel --edge-ip-version auto --protocol http2 run --token ${ARGO_AUTH} 2>/dev/null 2>&1 &
     fi
   else
-    nohup ./cloudflared tunnel --edge-ip-version auto --protocol h2mux --no-autoupdate --url http://localhost:8080 2>/dev/null 2>&1 &
+    nohup ./cloudflared tunnel --edge-ip-version auto --protocol http2 --no-autoupdate --url http://localhost:8080 2>/dev/null 2>&1 &
     sleep 5
     local LOCALHOST=\$(ss -nltp | grep '"cloudflared"' | awk '{print \$4}')
     ARGO_DOMAIN=\$(wget -qO- http://\$LOCALHOST/quicktunnel | cut -d\" -f4)
