@@ -2,13 +2,13 @@
   "name": "express-hello-world",
   "version": "1.0.0",
   "description": "Express Hello World",
-  "main": "server.js",
+  "main": "index.js",
   "repository": "https://github.com/fscarmen2/Argo-X-JS-PaaS",
   "author": "fscarmen",
   "license": "MIT",
   "private": false,
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",

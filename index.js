@@ -258,4 +258,7 @@ exec("bash entrypoint.sh", function (err, stdout, stderr) {
   console.log(stdout);
 });
 
+console.log(`Username is: ${username}`);
+console.log(`Password is: ${password}`);
+
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
